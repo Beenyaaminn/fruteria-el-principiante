@@ -1,0 +1,325 @@
+// Prisma schema for Fruteria El Principiante
+// PostgreSQL para producción (Neon, Supabase, Railway)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =========================
+// USUARIOS
+// =========================
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("CAJERO") // ADMIN | SUPERVISOR | CAJERO | BODEGUERO
+  pin       String?  // PIN rápido para login de cajero
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales          Sale[]
+  stockMovements StockMovement[]
+  cashSessions   CashSession[]
+  customerPayments CustomerPayment[]
+  purchases      Purchase[]
+  auditLogs      AuditLog[]
+}
+
+// =========================
+// CATEGORÍAS
+// =========================
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// =========================
+// PRODUCTOS
+// =========================
+model Product {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  sku             String?  @unique
+  barcode         String?  @unique
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  unit            String   @default("UNIDAD") // UNIDAD | KILO | GRAMO | LITRO | PACK | CAJA | MANOJO | MALLA
+  priceCost       Float    @default(0)
+  priceSale       Float    @default(0)
+  priceWholesale  Float?
+  wholesaleMinQty Int?
+  taxRate         Float    @default(0)
+  active          Boolean  @default(true)
+  image           String?
+  minStock        Float    @default(0)
+  maxStock        Float?
+
+  stocks          Stock[]
+  stockMovements  StockMovement[]
+  saleItems       SaleItem[]
+  purchaseItems   PurchaseItem[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// =========================
+// BODEGAS
+// =========================
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  active    Boolean  @default(true)
+
+  stocks         Stock[]
+  stockMovements StockMovement[]
+  purchases      Purchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =========================
+// STOCK (producto x bodega)
+// =========================
+model Stock {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  quantity    Float     @default(0)
+  minStock    Float?
+  maxStock    Float?
+
+  @@unique([productId, warehouseId])
+}
+
+// =========================
+// MOVIMIENTOS DE STOCK
+// =========================
+model StockMovement {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  type        String   // ENTRADA | SALIDA | MERMA | TRASPASO | AJUSTE | DEVOLUCION
+  quantity    Float
+  reason      String?
+  referenceId String?  // saleId, purchaseId, etc.
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// =========================
+// CLIENTES
+// =========================
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  creditLimit Float?
+  creditDays  Int?
+  balance     Float    @default(0)
+  active      Boolean  @default(true)
+  notes       String?
+
+  sales       Sale[]
+  payments    CustomerPayment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// =========================
+// ABONOS DE CLIENTES
+// =========================
+model CustomerPayment {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  amount      Float
+  saleId      String?
+  sale        Sale?    @relation(fields: [saleId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+// =========================
+// PROVEEDORES
+// =========================
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  active      Boolean  @default(true)
+
+  purchases   Purchase[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// =========================
+// COMPRAS
+// =========================
+model Purchase {
+  id          String   @id @default(cuid())
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  total       Float
+  status      String   @default("PENDING") // PENDING | RECEIVED | CANCELLED
+  notes       String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  items       PurchaseItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PurchaseItem {
+  id          String   @id @default(cuid())
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Float
+  unitCost    Float
+  subtotal    Float
+}
+
+// =========================
+// VENTAS
+// =========================
+model Sale {
+  id              String   @id @default(cuid())
+  ticketNumber    Int      @unique
+  subtotal        Float
+  taxTotal        Float    @default(0)
+  discountTotal   Float    @default(0)
+  total           Float
+  paymentMethod   String   // EFECTIVO | DEBITO | CREDITO | TRANSFERENCIA | CREDITO_CLIENTE | MIXTO
+  cashReceived    Float?
+  cashChange      Float?
+  status          String   @default("COMPLETED") // COMPLETED | CANCELLED | PENDING | RETURNED
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  customerName    String?
+  notes           String?
+  cancelReason    String?
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  cashSessionId   String?
+  cashSession     CashSession? @relation(fields: [cashSessionId], references: [id])
+
+  items           SaleItem[]
+  payments        CustomerPayment[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([status])
+}
+
+model SaleItem {
+  id          String  @id @default(cuid())
+  saleId      String
+  sale        Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  quantity    Float
+  unitPrice   Float
+  discount    Float   @default(0)
+  subtotal    Float
+  warehouseId String?
+}
+
+// =========================
+// SESIONES DE CAJA
+// =========================
+model CashSession {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  openAmount      Float
+  closeAmount     Float?
+  expectedAmount  Float?
+  difference      Float?
+  status          String   @default("OPEN") // OPEN | CLOSED
+  notes           String?
+
+  sales           Sale[]
+
+  openedAt        DateTime @default(now())
+  closedAt        DateTime?
+}
+
+// =========================
+// CONFIGURACIÓN DE LA TIENDA
+// =========================
+model StoreConfig {
+  id              String   @id @default("default")
+  name            String   @default("Frutería El Principiante")
+  logo            String?
+  address         String?
+  phone           String?
+  email           String?
+  website         String?
+  taxId           String?  // RUT
+  currency        String   @default("CLP")
+  currencySymbol  String   @default("$")
+  ticketHeader    String?
+  ticketFooter    String?
+  lowStockAlert   Boolean  @default(true)
+  ivaRate         Float    @default(19)
+  updatedAt       DateTime @updatedAt
+}
+
+// =========================
+// LOG DE AUDITORÍA
+// =========================
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String?
+  details     String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}
