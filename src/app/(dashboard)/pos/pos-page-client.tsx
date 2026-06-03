@@ -7,6 +7,7 @@ import { CreditosTab } from "./creditos-tab";
 import { ClientesTab } from "./clientes-tab";
 import { InventarioTab } from "./inventario-tab";
 import { ComprasTab } from "./compras-tab";
+import { CorteTab } from "./corte-tab";
 import { POSTabs, TabId } from "./pos-tabs";
 
 type POSProduct = {
@@ -89,6 +90,9 @@ export function POSPageClient({
         }
         comprasContent={
           <ComprasTab />
+        }
+        corteContent={
+          <CorteTab />
         }
       />
     </div>
