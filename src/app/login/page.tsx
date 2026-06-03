@@ -2,6 +2,8 @@ import { LoginForm } from "./login-form";
 import { Apple, Cherry, Grape, Leaf } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const config = await prisma.storeConfig.findUnique({ where: { id: "default" } });
   const storeName = config?.name || "Frutería El Principiante";
