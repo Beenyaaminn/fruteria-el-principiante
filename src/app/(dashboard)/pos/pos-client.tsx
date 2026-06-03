@@ -418,7 +418,7 @@ export function POSClient({
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="p-3 sm:p-4">
             {filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -470,7 +470,7 @@ export function POSClient({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Ventas action bar */}
         <div className="border-t border-border bg-card p-1.5 flex items-center gap-1 overflow-x-auto shrink-0">
