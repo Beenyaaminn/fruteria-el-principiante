@@ -36,7 +36,7 @@ export default async function LoginPage() {
               <Apple className="h-6 w-6" />
             </div>
             {logoUrl && (
-              <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" />
             )}
           </div>
           <div className="drop-shadow-sm">
@@ -67,7 +67,7 @@ export default async function LoginPage() {
                 <Apple className="h-8 w-8" />
               </div>
               {logoUrl && (
-                <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" />
               )}
             </div>
             )}
@@ -106,7 +106,7 @@ export default async function LoginPage() {
                   <Apple className="h-12 w-12 text-primary-foreground" />
                 </div>
                 {logoUrl && (
-                  <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-xl" />
                 )}
               </div>
             </div>
