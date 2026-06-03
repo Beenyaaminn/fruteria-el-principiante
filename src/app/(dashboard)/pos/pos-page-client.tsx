@@ -71,6 +71,7 @@ export function POSPageClient({
             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
             customers={customers}
             cashSession={cashSession}
+            showSubTabs
           />
         }
         productosContent={

@@ -76,11 +76,13 @@ export function POSClient({
   categories,
   customers,
   cashSession,
+  showSubTabs,
 }: {
   products: Product[];
   categories: Category[];
   customers: Customer[];
   cashSession: { id: string; openAmount: number; openedAt: string } | null;
+  showSubTabs?: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -90,6 +92,7 @@ export function POSClient({
   const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [mobileView, setMobileView] = useState<"products" | "cart">("products");
+  const [ventasSubTab, setVentasSubTab] = useState<string>("vender");
   const [artComunOpen, setArtComunOpen] = useState(false);
   const [artComunName, setArtComunName] = useState("");
   const [artComunPrice, setArtComunPrice] = useState("");
@@ -418,8 +421,48 @@ export function POSClient({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="p-3 sm:p-4">
+        {showSubTabs && (
+          <div className="flex items-center border-b border-border bg-card overflow-x-auto shrink-0">
+            {([
+              { id: "vender", label: "Vender", icon: ShoppingCart },
+              { id: "entradas", label: "Entradas", icon: ArrowDownToLine, cls: "text-green-600" },
+              { id: "salidas", label: "Salidas", icon: ArrowUpFromLine, cls: "text-red-600" },
+              { id: "verificador", label: "Verificador", icon: Scan },
+              { id: "art-comun", label: "Art Común", icon: FileText },
+              { id: "mayoreo", label: "Mayoreo", icon: DollarSign },
+              { id: "codigo", label: "Código", icon: Barcode },
+            ]).map((t) => {
+              const active = ventasSubTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setVentasSubTab(t.id);
+                    if (t.id === "codigo") searchRef.current?.focus();
+                    if (t.id === "art-comun") setArtComunOpen(true);
+                    if (t.id === "entradas") { setCashMoveType("IN"); setCashMoveOpen(true); }
+                    if (t.id === "salidas") { setCashMoveType("OUT"); setCashMoveOpen(true); }
+                    if (t.id === "verificador") { setVerificadorCode(""); setVerificadorResult(null); setVerificadorOpen(true); }
+                    if (t.id === "mayoreo") handleMayoreo();
+                  }}
+                  className={cn(
+                    "py-2 px-3 text-xs font-semibold transition-colors relative whitespace-nowrap border-r border-border flex items-center gap-1.5",
+                    active ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    !active && t.cls
+                  )}
+                >
+                  <t.icon className={cn("h-3.5 w-3.5", !active && t.cls)} />
+                  {t.label}
+                  {active && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {(!showSubTabs || ventasSubTab === "vender") && (
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="p-3 sm:p-4">
             {filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Package className="h-12 w-12 text-muted-foreground/50 mb-3" />
@@ -471,8 +514,9 @@ export function POSClient({
             )}
           </div>
         </div>
+        )}
 
-        {/* Ventas action bar */}
+        {!showSubTabs && (
         <div className="border-t border-border bg-card p-1.5 flex items-center gap-1 overflow-x-auto shrink-0">
           <Button size="sm" variant="ghost" onClick={() => searchRef.current?.focus()} className="shrink-0 text-xs">
             <Barcode className="h-3.5 w-3.5 mr-1" /> Código
@@ -500,6 +544,7 @@ export function POSClient({
             </Button>
           )}
         </div>
+        )}
       </div>
 
       {/* DERECHA: CARRITO */}
