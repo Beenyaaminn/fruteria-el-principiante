@@ -49,7 +49,7 @@ export function ConfiguracionTab() {
         currencySymbol: c.currencySymbol || "$",
         ticketHeader: c.ticketHeader || "", ticketFooter: c.ticketFooter || "",
         loginBackground: c.loginBackground || "",
-        ivaRate: c.ivaRate || 19, lowStockAlert: c.lowStockAlert ?? true,
+        ivaRate: c.ivaRate ?? 19, lowStockAlert: c.lowStockAlert ?? true,
       });
     } catch (err: any) { toast.error("Error al cargar configuración"); }
     finally { setLoading(false); }
