@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, Plus, Pencil, Trash2, Tags, BarChart3, Gift, Upload, BookOpen,
-  Loader2, X, Package, AlertTriangle, Download, FileUp, FileDown,
+  Loader2, X, Package, AlertTriangle, Download, FileUp, FileSpreadsheet,
 } from "lucide-react";
 import { formatCLP, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ import {
   createCategory, updateCategory, deleteCategory,
 } from "@/lib/actions/categories";
 import { importProducts } from "@/lib/actions/import-products";
+import * as XLSX from "xlsx";
 
 type Product = {
   id: string;
@@ -278,13 +279,44 @@ export function ProductosTab({
   function parseCSV(text: string): any[] {
     const lines = text.split(/\r?\n/).filter((l) => l.trim());
     if (lines.length < 2) return [];
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
     const rows: any[] = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      const values = parseCSVLine(lines[i]);
       const row: any = {};
       headers.forEach((h, idx) => { row[h] = values[idx] || ""; });
-      if (row.nombre || row.name) rows.push(row);
+      if (row.nombre || row.name || row.codigo || row.sku) rows.push(row);
+    }
+    return rows;
+  }
+
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === "," && !inQuotes) { result.push(current.trim()); current = ""; continue; }
+      current += ch;
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  function parseXLSXToRows(data: Uint8Array): any[] {
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+    if (json.length < 2) return [];
+    const headers = json[0].map((h: string) => String(h || "").trim().toLowerCase());
+    const rows: any[] = [];
+    for (let i = 1; i < json.length; i++) {
+      const row: any = {};
+      headers.forEach((h: string, idx: number) => {
+        row[h] = json[i]?.[idx] !== undefined ? String(json[i][idx]).trim() : "";
+      });
+      if (row.nombre || row.name || row.codigo || row.sku) rows.push(row);
     }
     return rows;
   }
@@ -292,14 +324,30 @@ export function ProductosTab({
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const ext = file.name.split(".").pop()?.toLowerCase();
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const parsed = parseCSV(text);
+      let parsed: any[] = [];
+      if (ext === "xlsx" || ext === "xls") {
+        const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+        parsed = parseXLSXToRows(data);
+      } else {
+        const text = ev.target?.result as string;
+        parsed = parseCSV(text);
+      }
       setImportPreview(parsed);
       setImportResult(null);
+      if (parsed.length === 0) {
+        toast.error("No se detectaron productos en el archivo. Revisa el formato.");
+      } else {
+        toast.success(`${parsed.length} productos detectados`);
+      }
     };
-    reader.readAsText(file);
+    if (ext === "xlsx" || ext === "xls") {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
     e.target.value = "";
   }
 
@@ -349,28 +397,23 @@ export function ProductosTab({
       p.priceCost, p.priceSale, p.priceWholesale || "", p.wholesaleMinQty || "",
       p.taxRate, p.minStock, p.maxStock || "", p.totalStock,
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `productos_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    XLSX.writeFile(wb, `productos_${new Date().toISOString().split("T")[0]}.xlsx`);
     toast.success("Catálogo exportado");
   }
 
   function handleDownloadTemplate() {
-    const headers = "Nombre,SKU,Código de Barras,Categoría,Unidad,Precio Costo,Precio Venta,Precio Mayorista,Cant Min Mayorista,IVA,Stock Mínimo,Stock Máximo";
-    const example = "Manzana Roja,MANZ-001,7801234567890,Frutas,UNIDAD,500,800,,,19,10,";
-    const csv = headers + "\n" + example;
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "plantilla_productos.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    const headers = ["Nombre", "SKU", "Código de Barras", "Categoría", "Unidad", "Precio Costo", "Precio Venta", "Precio Mayorista", "Cant Min Mayorista", "IVA", "Stock Mínimo", "Stock Máximo"];
+    const example = ["Manzana Roja", "MANZ-001", "7801234567890", "Frutas", "UNIDAD", 500, 800, "", "", 19, 10, ""];
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    XLSX.writeFile(wb, "plantilla_productos.xlsx");
+    toast.success("Plantilla descargada");
   }
 
   const lowStock = filtered.filter((p) => p.totalStock > 0 && p.totalStock <= p.minStock).length;
@@ -614,22 +657,27 @@ export function ProductosTab({
           <DialogHeader>
             <DialogTitle>Importar productos</DialogTitle>
             <DialogDescription>
-              Carga un archivo CSV con los productos. Descarga la plantilla para ver el formato esperado.
+              Carga un archivo Excel (.xlsx) o CSV con los productos. Descarga la plantilla para ver el formato.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 flex-1 overflow-y-auto">
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
-                <FileDown className="h-3.5 w-3.5 mr-1" /> Plantilla CSV
+                <FileSpreadsheet className="h-3.5 w-3.5 mr-1" /> Plantilla Excel
               </Button>
               <label className="flex-1">
                 <Button size="sm" variant="default" className="w-full" asChild>
                   <span>
-                    <FileUp className="h-3.5 w-3.5 mr-1" /> Cargar archivo CSV
+                    <FileUp className="h-3.5 w-3.5 mr-1" /> Cargar Excel / CSV
                   </span>
                 </Button>
-                <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
               </label>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="font-medium">Columnas esperadas:</p>
+              <p><strong>Nombre</strong> (obligatorio) · SKU · Código de Barras · Categoría · Unidad (UNIDAD, KILO, GRAMO, etc)</p>
+              <p>Precio Costo · <strong>Precio Venta</strong> (obligatorio) · Precio Mayorista · Cant Min Mayorista · IVA · Stock Mínimo · Stock Máximo</p>
             </div>
 
             {importPreview.length > 0 && (
