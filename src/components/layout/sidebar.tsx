@@ -238,13 +238,14 @@ function SidebarLogo({ name, logo, subtitle }: { name?: string; logo?: string | 
 
   return (
     <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4 shrink-0">
-      {logo ? (
-        <img src={logo} alt={name} className="h-9 w-9 object-cover rounded-lg" />
-      ) : (
+      <div className="relative">
         <div className="rounded-lg bg-primary p-1.5">
           <Apple className="h-5 w-5 text-primary-foreground" />
         </div>
-      )}
+        {logo && (
+          <img src={logo} alt={name} className="absolute inset-0 h-full w-full object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        )}
+      </div>
       <div className="flex flex-col">
         <span className="text-sm font-bold leading-tight">{line1}</span>
         <span className="text-xs text-sidebar-foreground/70 leading-tight">{line2}</span>
@@ -294,13 +295,14 @@ export function Sidebar({ role, storeName, storeLogo, storeSubtitle }: { role: s
       >
         <div className="flex items-center justify-between border-b border-sidebar-border px-4 h-16 shrink-0">
           <div className="flex items-center gap-2">
-            {storeLogo ? (
-              <img src={storeLogo} alt={storeName} className="h-9 w-9 object-cover rounded-lg" />
-            ) : (
+            <div className="relative">
               <div className="rounded-lg bg-primary p-1.5">
                 <Apple className="h-5 w-5 text-primary-foreground" />
               </div>
-            )}
+              {storeLogo && (
+                <img src={storeLogo} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              )}
+            </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold leading-tight">{storeName || "Frutería"}</span>
               <span className="text-xs text-sidebar-foreground/70 leading-tight">{storeSubtitle || "El Principiante"}</span>

@@ -31,13 +31,14 @@ export default async function LoginPage() {
       {/* Mobile branding strip */}
       <div className="lg:hidden absolute top-0 left-0 right-0 z-10 p-4 flex items-center gap-3">
         <div className="flex items-center gap-3">
-          {logoUrl ? (
-            <img src={logoUrl} alt={storeName} crossOrigin="anonymous" className="h-10 w-10 object-cover rounded-lg bg-white/20 p-1 backdrop-blur-sm" />
-          ) : (
+          <div className="relative">
             <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
               <Apple className="h-6 w-6" />
             </div>
-          )}
+            {logoUrl && (
+              <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            )}
+          </div>
           <div className="drop-shadow-sm">
             <h1 className="text-lg font-bold leading-tight text-white">{storeName}</h1>
             {storeSubtitle && <p className="text-xs text-white/70">{storeSubtitle}</p>}
@@ -59,11 +60,16 @@ export default async function LoginPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             {logoUrl ? (
-              <img src={logoUrl} alt={storeName} crossOrigin="anonymous" className="h-10 w-10 object-cover rounded-lg" />
+              <img src={logoUrl} alt={storeName}  className="h-10 w-10 object-cover rounded-lg" />
             ) : (
+            <div className="relative">
               <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
                 <Apple className="h-8 w-8" />
               </div>
+              {logoUrl && (
+                <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              )}
+            </div>
             )}
             <div>
               <h1 className="text-2xl font-bold leading-tight">{storeName}</h1>
@@ -95,13 +101,14 @@ export default async function LoginPage() {
         <div className="w-full space-y-8">
           <div className="space-y-2 text-center">
             <div className="flex justify-center mb-4">
-              {logoUrl ? (
-                <img src={logoUrl} alt={storeName} crossOrigin="anonymous" className="h-20 w-20 object-contain rounded-xl" />
-              ) : (
+              <div className="relative">
                 <div className="rounded-xl bg-primary p-4">
                   <Apple className="h-12 w-12 text-primary-foreground" />
                 </div>
-              )}
+                {logoUrl && (
+                  <img src={logoUrl} alt={storeName} className="absolute inset-0 h-full w-full object-cover rounded-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                )}
+              </div>
             </div>
             <h2 className="text-3xl font-bold tracking-tight">Iniciar sesión</h2>
             <p className="text-muted-foreground">Ingresa tus credenciales para acceder al sistema</p>
