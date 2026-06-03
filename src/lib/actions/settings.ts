@@ -17,6 +17,7 @@ const ConfigSchema = z.object({
   currencySymbol: z.string().default("$"),
   ticketHeader: z.string().optional().nullable(),
   ticketFooter: z.string().optional().nullable(),
+  loginBackground: z.string().optional().nullable(),
   ivaRate: z.coerce.number().min(0).max(100).default(19),
   lowStockAlert: z.boolean().default(true),
 });
@@ -50,6 +51,7 @@ export async function updateStoreConfig(data: ConfigInput) {
       taxId: validated.taxId || null,
       ticketHeader: validated.ticketHeader || null,
       ticketFooter: validated.ticketFooter || null,
+      loginBackground: validated.loginBackground || null,
     },
     create: {
       id: "default",
@@ -62,6 +64,7 @@ export async function updateStoreConfig(data: ConfigInput) {
       taxId: validated.taxId || null,
       ticketHeader: validated.ticketHeader || null,
       ticketFooter: validated.ticketFooter || null,
+      loginBackground: validated.loginBackground || null,
     },
   });
 

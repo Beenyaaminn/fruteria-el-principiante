@@ -232,30 +232,36 @@ function SidebarFooter() {
   );
 }
 
-function SidebarLogo() {
+function SidebarLogo({ name, logo }: { name?: string; logo?: string | null }) {
+  const names = (name || "Frutería El Principiante").split(" ");
+  const line1 = names.slice(0, 1).join(" ") || "Frutería";
+  const line2 = names.slice(1).join(" ") || "El Principiante";
+
   return (
     <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4 shrink-0">
       <div className="rounded-lg bg-primary p-1.5">
-        <Apple className="h-5 w-5 text-primary-foreground" />
+        {logo ? (
+          <img src={logo} alt={name} className="h-5 w-5 object-contain" />
+        ) : (
+          <Apple className="h-5 w-5 text-primary-foreground" />
+        )}
       </div>
       <div className="flex flex-col">
-        <span className="text-sm font-bold leading-tight">Frutería</span>
-        <span className="text-xs text-sidebar-foreground/70 leading-tight">
-          El Principiante
-        </span>
+        <span className="text-sm font-bold leading-tight">{line1}</span>
+        <span className="text-xs text-sidebar-foreground/70 leading-tight">{line2}</span>
       </div>
     </div>
   );
 }
 
-export function Sidebar({ role }: { role: string }) {
+export function Sidebar({ role, storeName, storeLogo }: { role: string; storeName?: string; storeLogo?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <SidebarLogo />
+        <SidebarLogo name={storeName} logo={storeLogo} />
         <SidebarNav role={role} />
         <SidebarFooter />
       </aside>
@@ -290,10 +296,14 @@ export function Sidebar({ role }: { role: string }) {
         <div className="flex items-center justify-between border-b border-sidebar-border px-4 h-16 shrink-0">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-primary p-1.5">
-              <Apple className="h-5 w-5 text-primary-foreground" />
+              {storeLogo ? (
+                <img src={storeLogo} alt={storeName} className="h-5 w-5 object-contain" />
+              ) : (
+                <Apple className="h-5 w-5 text-primary-foreground" />
+              )}
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold leading-tight">Frutería</span>
+              <span className="text-sm font-bold leading-tight">{storeName || "Frutería"}</span>
               <span className="text-xs text-sidebar-foreground/70 leading-tight">El Principiante</span>
             </div>
           </div>

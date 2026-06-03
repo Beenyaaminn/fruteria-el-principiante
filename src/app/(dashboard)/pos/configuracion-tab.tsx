@@ -48,6 +48,7 @@ export function ConfiguracionTab() {
         taxId: c.taxId || "", currency: c.currency || "CLP",
         currencySymbol: c.currencySymbol || "$",
         ticketHeader: c.ticketHeader || "", ticketFooter: c.ticketFooter || "",
+        loginBackground: c.loginBackground || "",
         ivaRate: c.ivaRate || 19, lowStockAlert: c.lowStockAlert ?? true,
       });
     } catch (err: any) { toast.error("Error al cargar configuración"); }
@@ -64,6 +65,7 @@ export function ConfiguracionTab() {
         phone: form.phone || null, email: form.email || null, website: form.website || null,
         taxId: form.taxId || null, currency: form.currency, currencySymbol: form.currencySymbol,
         ticketHeader: form.ticketHeader || null, ticketFooter: form.ticketFooter || null,
+        loginBackground: form.loginBackground || null,
         ivaRate: form.ivaRate, lowStockAlert: form.lowStockAlert,
       });
       toast.success("Configuración guardada"); loadConfig();
@@ -156,6 +158,20 @@ export function ConfiguracionTab() {
             </Card>
 
             <Card className="shadow-none">
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Fondo del login</CardTitle><CardDescription>URL de imagen o gradiente CSS para el fondo de la pantalla de inicio</CardDescription></CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-1.5"><Label>URL de imagen de fondo</Label><Input value={form.loginBackground} onChange={(e) => update("loginBackground", e.target.value)} placeholder="https://ejemplo.com/fondo.jpg o gradiente CSS" /></div>
+                <p className="text-xs text-muted-foreground">También puedes usar un color sólido o gradiente CSS: linear-gradient(...), #color, etc.</p>
+                {form.loginBackground && !form.loginBackground.startsWith("http") && (
+                  <div className="h-16 rounded-lg border border-border" style={{ background: form.loginBackground }} />
+                )}
+                {form.loginBackground && form.loginBackground.startsWith("http") && (
+                  <img src={form.loginBackground} alt="Fondo" className="h-16 object-cover rounded-lg border border-border" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-none">
               <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Ticket className="h-4 w-4" />Ticket</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1.5"><Label>Encabezado del ticket</Label><Textarea value={form.ticketHeader} onChange={(e) => update("ticketHeader", e.target.value)} rows={2} placeholder="Texto que aparece arriba del ticket..." /></div>
@@ -188,13 +204,7 @@ export function ConfiguracionTab() {
         )}
 
         {subTab === "dispositivos" && (
-          <div className="max-w-lg space-y-4">
-            <h2 className="font-semibold flex items-center gap-2"><Printer className="h-4 w-4" />Dispositivos</h2>
-            <Card className="shadow-none"><CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Printer className="h-4 w-4" />Impresora y tickets</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Configuración de impresora térmica disponible próximamente.</p></CardContent></Card>
-            <Card className="shadow-none"><CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><QrCode className="h-4 w-4" />Lector de códigos</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">El lector de código de barras funciona automáticamente al escanear en el campo de búsqueda del POS.</p></CardContent></Card>
-            <Card className="shadow-none"><CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Monitor className="h-4 w-4" />Cajón de dinero</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Configuración de cajón monedero disponible próximamente.</p></CardContent></Card>
-            <Card className="shadow-none"><CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Scale className="h-4 w-4" />Báscula</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Conexión con báscula disponible próximamente.</p></CardContent></Card>
-          </div>
+          <DispositivosPanel />
         )}
 
         {subTab === "mantenimiento" && (
@@ -218,6 +228,223 @@ export function ConfiguracionTab() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function DispositivosPanel() {
+  const [printerStatus, setPrinterStatus] = useState<"idle" | "connected" | "error">("idle");
+  const [printerName, setPrinterName] = useState("");
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [lastScanned, setLastScanned] = useState("");
+  const [scalePort, setScalePort] = useState<any>(null);
+  const [scaleWeight, setScaleWeight] = useState("");
+  const [scaleStatus, setScaleStatus] = useState<"idle" | "connected" | "error">("idle");
+
+  const hasWebUSB = typeof navigator !== "undefined" && "usb" in navigator;
+  const hasWebSerial = typeof navigator !== "undefined" && "serial" in navigator;
+  const hasWebBluetooth = typeof navigator !== "undefined" && "bluetooth" in navigator;
+
+  async function connectPrinter() {
+    try {
+      if (!hasWebUSB) {
+        toast.error("WebUSB no soportado en este navegador. Usa Chrome o Edge.");
+        return;
+      }
+      const device = await (navigator as any).usb.requestDevice({
+        filters: [{ vendorId: 0x0416 }],
+      });
+      await device.open();
+      await device.selectConfiguration(1);
+      await device.claimInterface(0);
+      setPrinterName(device.productName || "Impresora USB");
+      setPrinterStatus("connected");
+      toast.success(`Impresora conectada: ${device.productName || "Dispositivo USB"}`);
+    } catch (err: any) {
+      if (err.name !== "NotFoundError") toast.error(err.message || "Error al conectar");
+      setPrinterStatus("error");
+    }
+  }
+
+  async function testPrint() {
+    toast.success("Imprimiendo ticket de prueba...");
+    window.print();
+  }
+
+  function handleBarcodeTest(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && barcodeInput.length > 3) {
+      setLastScanned(barcodeInput);
+      setBarcodeInput("");
+      toast.success(`Código leído: ${lastScanned || barcodeInput}`);
+    }
+  }
+
+  async function connectScale() {
+    try {
+      if (!hasWebSerial) {
+        toast.error("WebSerial no soportado. Usa Chrome o Edge con HTTPS.");
+        return;
+      }
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      setScalePort(port);
+      setScaleStatus("connected");
+      toast.success("Báscula conectada vía serial");
+      readScale(port);
+    } catch (err: any) {
+      if (err.name !== "NotFoundError") toast.error(err.message || "Error al conectar báscula");
+      setScaleStatus("error");
+    }
+  }
+
+  async function readScale(port: any) {
+    const decoder = new TextDecoder();
+    while (port.readable) {
+      try {
+        const reader = port.readable.getReader();
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) { reader.releaseLock(); break; }
+          const text = decoder.decode(value).trim();
+          const match = text.match(/[\d,.]+/);
+          if (match) setScaleWeight(match[0] + " kg");
+        }
+      } catch { break; }
+    }
+  }
+
+  async function openCashDrawer() {
+    toast.success("Señal de apertura de cajón enviada a la impresora");
+    // ESC/POS command for cash drawer: ESC p m t1 t2
+    if (printerStatus === "connected") {
+      try {
+        const devices = await (navigator as any).usb.getDevices();
+        const printer = devices.find((d: any) => d.opened);
+        if (printer) {
+          await printer.transferOut(1, new Uint8Array([0x1B, 0x70, 0x00, 0x19, 0xFA]));
+        }
+      } catch { /* fallback */ }
+    }
+  }
+
+  return (
+    <div className="max-w-lg space-y-4">
+      <h2 className="font-semibold flex items-center gap-2"><Printer className="h-4 w-4" />Dispositivos</h2>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <Badge variant="outline" className={cn("justify-center py-1.5", hasWebUSB ? "text-green-600" : "text-muted-foreground")}>{hasWebUSB ? "WebUSB ✓" : "WebUSB"}</Badge>
+        <Badge variant="outline" className={cn("justify-center py-1.5", hasWebSerial ? "text-green-600" : "text-muted-foreground")}>{hasWebSerial ? "WebSerial ✓" : "WebSerial"}</Badge>
+        <Badge variant="outline" className={cn("justify-center py-1.5", hasWebBluetooth ? "text-green-600" : "text-muted-foreground")}>{hasWebBluetooth ? "Bluetooth ✓" : "Bluetooth"}</Badge>
+        <Badge variant="outline" className={cn("justify-center py-1.5", "https:" === location.protocol ? "text-green-600" : "text-muted-foreground")}>{location.protocol === "https:" ? "HTTPS ✓" : "HTTPS"}</Badge>
+      </div>
+
+      <Card className="shadow-none">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Printer className="h-4 w-4" />Impresora y tickets
+            {printerStatus === "connected" && <Badge className="bg-green-500/10 text-green-700 text-xs ml-auto">Conectada</Badge>}
+          </CardTitle>
+          <CardDescription>
+            {printerName || "Impresora térmica de tickets ESC/POS"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {!hasWebUSB && <p className="text-xs text-orange-600">WebUSB requiere Chrome/Edge. También puedes usar Ctrl+P para imprimir.</p>}
+          <div className="flex gap-2 flex-wrap">
+            <Button size="sm" onClick={connectPrinter} disabled={!hasWebUSB}>
+              <Upload className="h-3.5 w-3.5 mr-1" />Conectar impresora
+            </Button>
+            <Button size="sm" variant="outline" onClick={testPrint}>
+              <Printer className="h-3.5 w-3.5 mr-1" />Probar impresión
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-none">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <QrCode className="h-4 w-4" />Lector de códigos de barras
+            <Badge className="bg-green-500/10 text-green-700 text-xs ml-auto">Automático</Badge>
+          </CardTitle>
+          <CardDescription>
+            La mayoría de lectores funcionan como teclado HID. Escanea aquí para probar.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="relative">
+            <QrCode className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Escanea un código de barras aquí..."
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.currentTarget.value.length > 3) {
+                  setLastScanned(e.currentTarget.value);
+                  e.currentTarget.value = "";
+                  toast.success(`Código detectado: ${lastScanned || e.currentTarget.value}`);
+                }
+              }}
+              className="pl-8 h-9 text-sm"
+              autoFocus
+              ref={(ref) => ref?.focus()}
+            />
+          </div>
+          {lastScanned && (
+            <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-2 text-sm">
+              Último código leído: <span className="font-mono font-semibold">{lastScanned}</span>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">El lector funciona automáticamente en el buscador del POS al escanear.</p>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-none">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Monitor className="h-4 w-4" />Cajón de dinero
+          </CardTitle>
+          <CardDescription>
+            Se conecta mediante el cable RJ12 a la impresora térmica. La impresora envía la señal de apertura.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button size="sm" variant="outline" onClick={openCashDrawer}>
+            <Monitor className="h-3.5 w-3.5 mr-1" />Probar apertura de cajón
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-none">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Scale className="h-4 w-4" />Báscula
+            {scaleStatus === "connected" && <Badge className="bg-green-500/10 text-green-700 text-xs ml-auto">Conectada</Badge>}
+          </CardTitle>
+          <CardDescription>
+            Conecta una báscula serial (USB/RS232) al puerto COM del equipo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {!hasWebSerial && <p className="text-xs text-orange-600">WebSerial requiere Chrome/Edge con HTTPS.</p>}
+          <div className="flex gap-2 flex-wrap">
+            <Button size="sm" onClick={connectScale} disabled={!hasWebSerial}>
+              <Upload className="h-3.5 w-3.5 mr-1" />Conectar báscula
+            </Button>
+            {scalePort && (
+              <Button size="sm" variant="outline" onClick={() => { scalePort.close(); setScalePort(null); setScaleStatus("idle"); setScaleWeight(""); }}>
+                Desconectar
+              </Button>
+            )}
+          </div>
+          {scaleWeight && (
+            <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-3 text-center">
+              <p className="text-xs text-muted-foreground uppercase">Peso detectado</p>
+              <p className="text-2xl font-bold text-primary">{scaleWeight}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

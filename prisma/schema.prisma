@@ -316,6 +316,7 @@ model StoreConfig {
   currencySymbol  String   @default("$")
   ticketHeader    String?
   ticketFooter    String?
+  loginBackground String?
   lowStockAlert   Boolean  @default(true)
   ivaRate         Float    @default(19)
   updatedAt       DateTime @updatedAt
