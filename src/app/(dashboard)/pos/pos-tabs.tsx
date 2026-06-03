@@ -26,6 +26,7 @@ export function POSTabs({
   comprasContent,
   corteContent,
   reportesContent,
+  configuracionContent,
   activeTab,
   onTabChange,
 }: {
@@ -37,6 +38,7 @@ export function POSTabs({
   comprasContent: React.ReactNode;
   corteContent: React.ReactNode;
   reportesContent: React.ReactNode;
+  configuracionContent: React.ReactNode;
   activeTab: TabId;
   onTabChange: (id: TabId) => void;
 }) {
@@ -70,7 +72,8 @@ export function POSTabs({
         {activeTab === "compras" && comprasContent}
         {activeTab === "corte" && corteContent}
         {activeTab === "reportes" && reportesContent}
-        {activeTab !== "ventas" && activeTab !== "productos" && activeTab !== "creditos" && activeTab !== "clientes" && activeTab !== "inventario" && activeTab !== "compras" && activeTab !== "corte" && activeTab !== "reportes" && (
+        {activeTab === "configuracion" && configuracionContent}
+        {activeTab !== "ventas" && activeTab !== "productos" && activeTab !== "creditos" && activeTab !== "clientes" && activeTab !== "inventario" && activeTab !== "compras" && activeTab !== "corte" && activeTab !== "reportes" && activeTab !== "configuracion" && (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
               <p className="text-xl font-semibold mb-1">{tabs.find((t) => t.id === activeTab)?.label}</p>
