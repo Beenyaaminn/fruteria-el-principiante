@@ -5,6 +5,7 @@ import { POSClient } from "./pos-client";
 import { ProductosTab } from "./productos-tab";
 import { CreditosTab } from "./creditos-tab";
 import { ClientesTab } from "./clientes-tab";
+import { InventarioTab } from "./inventario-tab";
 import { POSTabs, TabId } from "./pos-tabs";
 
 type POSProduct = {
@@ -80,6 +81,9 @@ export function POSPageClient({
         }
         clientesContent={
           <ClientesTab />
+        }
+        inventarioContent={
+          <InventarioTab />
         }
       />
     </div>
