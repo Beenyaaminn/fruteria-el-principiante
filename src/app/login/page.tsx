@@ -90,7 +90,16 @@ export default async function LoginPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 text-center">
+            <div className="flex justify-center mb-4">
+              {logoUrl ? (
+                <img src={logoUrl} alt={storeName} className="h-20 w-20 object-contain rounded-xl" />
+              ) : (
+                <div className="rounded-xl bg-primary p-4">
+                  <Apple className="h-12 w-12 text-primary-foreground" />
+                </div>
+              )}
+            </div>
             <h2 className="text-3xl font-bold tracking-tight">Iniciar sesión</h2>
             <p className="text-muted-foreground">Ingresa tus credenciales para acceder al sistema</p>
           </div>
