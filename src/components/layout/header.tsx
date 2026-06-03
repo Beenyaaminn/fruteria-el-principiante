@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Bell, BellOff, Search, User as UserIcon, LogOut, AlertTriangle, Package, ChevronRight } from "lucide-react";
+import { Bell, BellOff, User as UserIcon, LogOut, AlertTriangle, Package, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -39,7 +38,6 @@ export function Header({ user }: { user: User }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  // Reloj
   useEffect(() => {
     const update = () => {
       setTime(
@@ -51,7 +49,6 @@ export function Header({ user }: { user: User }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Cargar alertas de stock bajo
   useEffect(() => {
     async function loadAlerts() {
       try {
@@ -71,7 +68,6 @@ export function Header({ user }: { user: User }) {
     loadAlerts();
   }, []);
 
-  // Clic fuera - cierra dropdowns
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -93,23 +89,24 @@ export function Header({ user }: { user: User }) {
     .toUpperCase() || "?";
 
   return (
-    <header className="flex h-16 items-center justify-between gap-4 border-b border-border bg-card px-4 sm:px-6">
-      <div className="flex flex-1 items-center gap-3 max-w-md">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar productos, ventas, clientes..."
-            className="pl-10 h-9 bg-muted/40"
-          />
+    <header className="flex h-12 md:h-16 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:px-4 md:px-6">
+      {/* Espacio para hamburger en mobile */}
+      <div className="flex flex-1 items-center gap-2 md:gap-3 max-w-md">
+        <div className="w-10 shrink-0 md:hidden" />
+        <div className="flex-1 max-w-[200px] sm:max-w-md">
+          <div className="text-xs md:text-sm font-mono text-muted-foreground md:hidden truncate">
+            {time}
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3">
         <div className="hidden md:flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5">
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
           <span className="text-sm font-mono">{time}</span>
         </div>
+
+        <span className="text-xs font-mono text-muted-foreground md:hidden">{time}</span>
 
         {/* Notificaciones */}
         <div ref={notifRef} className="relative">
@@ -131,10 +128,10 @@ export function Header({ user }: { user: User }) {
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 w-72 rounded-lg border border-border bg-popover shadow-lg">
+            <div className="absolute right-0 top-full mt-1 z-50 w-64 sm:w-72 rounded-lg border border-border bg-popover shadow-lg">
               <div className="p-3 border-b border-border">
                 <p className="text-sm font-semibold flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
                   Alertas de stock bajo
                 </p>
               </div>
@@ -195,15 +192,15 @@ export function Header({ user }: { user: User }) {
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 h-9 px-2 rounded-md hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 h-8 sm:h-9 px-1 sm:px-2 rounded-md hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-colors"
           >
-            <Avatar className="h-7 w-7">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+            <Avatar className="h-6 w-6 sm:h-7 sm:w-7">
+              <AvatarFallback className="bg-primary text-primary-foreground text-[10px] sm:text-xs">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:flex flex-col items-start">
-              <span className="text-sm font-medium leading-tight">
+              <span className="text-xs sm:text-sm font-medium leading-tight">
                 {user?.name || "Usuario"}
               </span>
               {user?.role && (
@@ -218,10 +215,10 @@ export function Header({ user }: { user: User }) {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-1 z-50 w-56 rounded-lg border border-border bg-popover shadow-lg">
+            <div className="absolute right-0 top-full mt-1 z-50 w-48 sm:w-56 rounded-lg border border-border bg-popover shadow-lg">
               <div className="p-2">
                 <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <Separator />
               <div className="p-1">

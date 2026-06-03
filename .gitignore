@@ -58,6 +58,7 @@ next-env.d.ts
 /dev-err.log
 
 # Scripts auxiliares de prueba (solo dev local)
+scripts/
 /scripts/test-*.cjs
 /scripts/gen-session.cjs
 

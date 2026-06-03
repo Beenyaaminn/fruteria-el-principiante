@@ -56,7 +56,7 @@ export function POSPageClient({
   const [activeTab, setActiveTab] = useState<TabId>("ventas");
 
   return (
-    <div className="-m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)]">
+    <div className="-m-3 sm:-m-4 md:-m-6 lg:-m-8 h-[calc(100dvh-3rem)] md:h-[calc(100dvh-4rem)] pb-12 lg:pb-0">
       <POSTabs
         activeTab={activeTab}
         onTabChange={setActiveTab}

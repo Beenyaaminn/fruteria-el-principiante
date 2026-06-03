@@ -80,6 +80,7 @@ export function POSClient({
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
+  const [mobileView, setMobileView] = useState<"products" | "cart">("products");
   const searchRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -267,7 +268,12 @@ export function POSClient({
       )}
 
       {/* IZQUIERDA: PRODUCTOS */}
-      <div className={cn("flex-1 flex flex-col min-w-0", !cashSession && "pointer-events-none opacity-40")}>
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0",
+        !cashSession && "pointer-events-none opacity-40",
+        "lg:flex",
+        mobileView !== "products" ? "hidden" : "flex"
+      )}>
         <div className="border-b border-border bg-card p-3 sm:p-4 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -362,7 +368,12 @@ export function POSClient({
       </div>
 
       {/* DERECHA: CARRITO */}
-      <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card flex flex-col">
+      <div className={cn(
+        "lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card flex-col",
+        "lg:flex",
+        mobileView !== "cart" ? "hidden" : "flex",
+        "flex-1 lg:flex-initial"
+      )}>
         {/* Tickets tabs */}
         <div className="flex items-center border-b border-border overflow-x-auto shrink-0">
           {tickets.map((t, i) => {
@@ -642,6 +653,39 @@ export function POSClient({
         isSubmitting={isSubmitting}
         requireCustomer={!customer}
       />
+
+      {/* Mobile toggle bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex border-t border-border bg-card">
+        <button
+          onClick={() => setMobileView("products")}
+          className={cn(
+            "flex-1 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2",
+            mobileView === "products"
+              ? "text-primary bg-primary/5 border-t-2 border-primary"
+              : "text-muted-foreground"
+          )}
+        >
+          <Package className="h-4 w-4" />
+          Productos
+        </button>
+        <button
+          onClick={() => setMobileView("cart")}
+          className={cn(
+            "flex-1 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2",
+            mobileView === "cart"
+              ? "text-primary bg-primary/5 border-t-2 border-primary"
+              : "text-muted-foreground"
+          )}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Carrito
+          {getItemCount() > 0 && (
+            <Badge variant="default" className="rounded-full text-[10px] h-4 min-w-4 px-1">
+              {getItemCount()}
+            </Badge>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

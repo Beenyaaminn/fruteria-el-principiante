@@ -3,7 +3,7 @@ import { Apple, Cherry, Grape, Leaf } from "lucide-react";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full grid lg:grid-cols-2">
+    <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
       {/* Lado izquierdo - Branding */}
       <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary via-primary to-emerald-700 p-10 text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
