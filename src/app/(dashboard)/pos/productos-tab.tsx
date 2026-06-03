@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, Plus, Pencil, Trash2, Tags, BarChart3, Gift, Upload, BookOpen,
-  Loader2, X, Package, AlertTriangle,
+  Loader2, X, Package, AlertTriangle, Download, FileUp, FileDown,
 } from "lucide-react";
 import { formatCLP, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ import {
 import {
   createCategory, updateCategory, deleteCategory,
 } from "@/lib/actions/categories";
+import { importProducts } from "@/lib/actions/import-products";
 
 type Product = {
   id: string;
@@ -89,6 +90,9 @@ export function ProductosTab({
   const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
   const [catForm, setCatForm] = useState({ name: "", description: "" });
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
 
   const filtered = useMemo(() => {
     let result = initialProducts;
@@ -271,6 +275,104 @@ export function ProductosTab({
     }
   }
 
+  function parseCSV(text: string): any[] {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    const rows: any[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      const row: any = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ""; });
+      if (row.nombre || row.name) rows.push(row);
+    }
+    return rows;
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const parsed = parseCSV(text);
+      setImportPreview(parsed);
+      setImportResult(null);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
+  async function handleImport() {
+    if (importPreview.length === 0) {
+      toast.error("Carga un archivo CSV primero");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const mapped = importPreview.map((r: any) => ({
+        name: r.nombre || r.name || "",
+        sku: r.sku || r.codigo || null,
+        barcode: r.barcode || r["codigo de barras"] || r["codigo_barras"] || null,
+        categoryName: r.categoria || r["categoría"] || r.category || null,
+        unit: r.unidad || r.unit || "UNIDAD",
+        priceCost: parseFloat(r["precio costo"] || r["precio_costo"] || r.priceCost || r.costo || 0),
+        priceSale: parseFloat(r["precio venta"] || r["precio_venta"] || r.priceSale || r.precio || r.price || 0),
+        priceWholesale: parseFloat(r["precio mayorista"] || r["precio_mayorista"] || r.priceWholesale || 0) || null,
+        wholesaleMinQty: parseInt(r["cantidad min mayorista"] || r["cantidad_min_mayorista"] || r.wholesaleMinQty || 0) || null,
+        taxRate: parseFloat(r.iva || r.tax || r["tasa iva"] || r.taxRate || 0),
+        minStock: parseFloat(r["stock minimo"] || r["stock_minimo"] || r.minStock || 0),
+        maxStock: parseFloat(r["stock maximo"] || r["stock_maximo"] || r.maxStock || 0) || null,
+      }));
+      const result = await importProducts({ rows: mapped });
+      setImportResult(result);
+      setImportPreview([]);
+      if (result.created > 0) toast.success(`${result.created} productos importados`);
+      if (result.skipped > 0) toast.info(`${result.skipped} omitidos (ya existen)`);
+      if (result.errors.length > 0) result.errors.forEach((e) => toast.error(e));
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Error al importar");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleExport() {
+    const headers = [
+      "Nombre", "SKU", "Código de Barras", "Categoría", "Unidad",
+      "Precio Costo", "Precio Venta", "Precio Mayorista", "Cant Min Mayorista",
+      "IVA", "Stock Mínimo", "Stock Máximo", "Stock Actual",
+    ];
+    const rows = initialProducts.map((p) => [
+      p.name, p.sku || "", p.barcode || "", p.categoryName, UNIT_LABELS[p.unit] || p.unit,
+      p.priceCost, p.priceSale, p.priceWholesale || "", p.wholesaleMinQty || "",
+      p.taxRate, p.minStock, p.maxStock || "", p.totalStock,
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `productos_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Catálogo exportado");
+  }
+
+  function handleDownloadTemplate() {
+    const headers = "Nombre,SKU,Código de Barras,Categoría,Unidad,Precio Costo,Precio Venta,Precio Mayorista,Cant Min Mayorista,IVA,Stock Mínimo,Stock Máximo";
+    const example = "Manzana Roja,MANZ-001,7801234567890,Frutas,UNIDAD,500,800,,,19,10,";
+    const csv = headers + "\n" + example;
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "plantilla_productos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const lowStock = filtered.filter((p) => p.totalStock > 0 && p.totalStock <= p.minStock).length;
   const outOfStock = filtered.filter((p) => p.totalStock <= 0).length;
 
@@ -395,8 +497,11 @@ export function ProductosTab({
         <Button size="sm" variant="ghost" onClick={() => toast.info("Próximamente")} className="shrink-0">
           <Gift className="h-4 w-4 mr-1" /> Promociones
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => toast.info("Próximamente")} className="shrink-0">
+        <Button size="sm" variant="ghost" onClick={() => { setImportPreview([]); setImportResult(null); setImportOpen(true); }} className="shrink-0">
           <Upload className="h-4 w-4 mr-1" /> Importar
+        </Button>
+        <Button size="sm" variant="ghost" onClick={handleExport} className="shrink-0">
+          <Download className="h-4 w-4 mr-1" /> Exportar
         </Button>
         <Button size="sm" variant="ghost" onClick={() => toast.info("Próximamente")} className="shrink-0">
           <BookOpen className="h-4 w-4 mr-1" /> Catálogo
@@ -500,6 +605,77 @@ export function ProductosTab({
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import dialog */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Importar productos</DialogTitle>
+            <DialogDescription>
+              Carga un archivo CSV con los productos. Descarga la plantilla para ver el formato esperado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 flex-1 overflow-y-auto">
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
+                <FileDown className="h-3.5 w-3.5 mr-1" /> Plantilla CSV
+              </Button>
+              <label className="flex-1">
+                <Button size="sm" variant="default" className="w-full" asChild>
+                  <span>
+                    <FileUp className="h-3.5 w-3.5 mr-1" /> Cargar archivo CSV
+                  </span>
+                </Button>
+                <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+              </label>
+            </div>
+
+            {importPreview.length > 0 && (
+              <>
+                <p className="text-sm font-medium">{importPreview.length} filas detectadas</p>
+                <div className="text-xs max-h-48 overflow-y-auto border border-border rounded-md">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-muted">
+                        {Object.keys(importPreview[0]).slice(0, 6).map((k) => (
+                          <th key={k} className="p-1.5 text-left font-medium">{k}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importPreview.slice(0, 10).map((row, i) => (
+                        <tr key={i} className="border-t border-border">
+                          {Object.values(row).slice(0, 6).map((v: any, j) => (
+                            <td key={j} className="p-1.5 truncate max-w-[120px]">{String(v).substring(0, 30)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {importPreview.length > 10 && <p className="text-xs text-muted-foreground">+ {importPreview.length - 10} filas más</p>}
+              </>
+            )}
+
+            {importResult && (
+              <div className="rounded-lg border border-border p-3 text-sm space-y-1">
+                <p className="text-green-600 font-medium">{importResult.created} productos creados</p>
+                {importResult.skipped > 0 && <p className="text-muted-foreground">{importResult.skipped} omitidos (ya existen)</p>}
+                {importResult.errors.map((e, i) => (
+                  <p key={i} className="text-red-600 text-xs">{e}</p>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="shrink-0">
+            <Button variant="outline" onClick={() => setImportOpen(false)}>Cerrar</Button>
+            <Button onClick={handleImport} disabled={importPreview.length === 0 || submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Importar {importPreview.length > 0 ? `(${importPreview.length})` : ""}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
