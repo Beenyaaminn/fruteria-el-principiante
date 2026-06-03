@@ -28,6 +28,7 @@ type ProductFormData = {
   taxRate: number;
   minStock: number;
   maxStock?: number;
+  initialStock?: number;
 };
 
 const units = [
@@ -66,6 +67,7 @@ export function ProductForm({
       priceSale: 0,
       taxRate: 0,
       minStock: 0,
+      initialStock: 0,
     }
   );
 
@@ -275,6 +277,17 @@ export function ProductForm({
                 step="any"
                 value={form.minStock}
                 onChange={(e) => update("minStock", parseFloat(e.target.value) || 0)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="initialStock">Stock inicial</Label>
+              <Input
+                id="initialStock"
+                type="number"
+                min="0"
+                step="any"
+                value={form.initialStock || 0}
+                onChange={(e) => update("initialStock", parseFloat(e.target.value) || 0)}
               />
             </div>
             <div className="space-y-1.5">

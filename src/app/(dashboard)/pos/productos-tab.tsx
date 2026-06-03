@@ -68,6 +68,7 @@ const EMPTY_PRODUCT_FORM = {
   priceCost: 0, priceSale: 0, priceWholesale: undefined as number | undefined,
   wholesaleMinQty: undefined as number | undefined,
   taxRate: 0, minStock: 0, maxStock: undefined as number | undefined,
+  initialStock: 0,
 };
 
 export function ProductosTab({
@@ -94,6 +95,7 @@ export function ProductosTab({
   const [importOpen, setImportOpen] = useState(false);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   const filtered = useMemo(() => {
     let result = initialProducts;
@@ -140,6 +142,7 @@ export function ProductosTab({
       taxRate: selected.taxRate,
       minStock: selected.minStock,
       maxStock: selected.maxStock ?? undefined,
+      initialStock: selected.totalStock,
     });
     setShowEditForm(true);
   }
@@ -169,6 +172,7 @@ export function ProductosTab({
         taxRate: form.taxRate,
         minStock: form.minStock,
         maxStock: form.maxStock ?? null,
+        initialStock: form.initialStock || 0,
       });
       toast.success("Producto creado");
       setShowNewForm(false);
@@ -546,7 +550,7 @@ export function ProductosTab({
         <Button size="sm" variant="ghost" onClick={handleExport} className="shrink-0">
           <Download className="h-4 w-4 mr-1" /> Exportar
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => toast.info("Próximamente")} className="shrink-0">
+        <Button size="sm" variant="ghost" onClick={() => setCatalogOpen(true)} className="shrink-0">
           <BookOpen className="h-4 w-4 mr-1" /> Catálogo
         </Button>
       </div>
@@ -726,6 +730,48 @@ export function ProductosTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Catalog dialog */}
+      <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Catálogo de productos</DialogTitle>
+            <DialogDescription>
+              Lista de precios · {initialProducts.length} productos · {initialCategories.length} categorías
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4">
+            {initialCategories.map((cat) => {
+              const catProducts = initialProducts.filter((p) => p.categoryId === cat.id);
+              if (catProducts.length === 0) return null;
+              return (
+                <div key={cat.id}>
+                  <h3 className="font-semibold text-sm bg-muted px-3 py-1.5 rounded-md sticky top-0">
+                    {cat.name} ({catProducts.length})
+                  </h3>
+                  <div className="mt-1 space-y-0.5">
+                    {catProducts.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between px-3 py-1.5 rounded hover:bg-muted/50 text-sm">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium">{p.name}</span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            /{UNIT_LABELS[p.unit] || p.unit}
+                          </span>
+                        </div>
+                        <span className="font-bold text-primary ml-4 shrink-0">{formatCLP(p.priceSale)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCatalogOpen(false)}>Cerrar</Button>
+            <Button onClick={() => window.print()}>Imprimir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -817,6 +863,10 @@ function ProductFormDialog({
             <div className="space-y-1.5">
               <Label>Stock mín. (alerta)</Label>
               <Input type="number" min="0" step="any" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Stock inicial</Label>
+              <Input type="number" min="0" step="any" value={form.initialStock || 0} onChange={(e) => setForm({ ...form, initialStock: parseFloat(e.target.value) || 0 })} />
             </div>
           </div>
         </div>

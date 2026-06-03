@@ -19,6 +19,7 @@ const ProductSchema = z.object({
   taxRate: z.coerce.number().min(0).max(100).default(0),
   minStock: z.coerce.number().min(0).default(0),
   maxStock: z.coerce.number().optional().nullable(),
+  initialStock: z.coerce.number().min(0).optional(),
   image: z.string().optional().nullable(),
 });
 
@@ -104,14 +105,14 @@ export async function createProduct(data: ProductInput) {
     },
   });
 
-  // Asignar stock inicial 0 en bodega principal
+  // Asignar stock inicial en bodega principal
   const mainWarehouse = await prisma.warehouse.findFirst();
   if (mainWarehouse) {
     await prisma.stock.create({
       data: {
         productId: product.id,
         warehouseId: mainWarehouse.id,
-        quantity: 0,
+        quantity: validated.initialStock || 0,
         minStock: validated.minStock,
       },
     });
