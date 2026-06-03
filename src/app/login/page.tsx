@@ -40,13 +40,13 @@ export default async function LoginPage() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
-              {logoUrl ? (
-                <img src={logoUrl} alt={storeName} className="h-10 w-10 object-contain" />
-              ) : (
+            {logoUrl ? (
+              <img src={logoUrl} alt={storeName} className="h-10 w-10 object-cover rounded-lg" />
+            ) : (
+              <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
                 <Apple className="h-8 w-8" />
-              )}
-            </div>
+              </div>
+            )}
             <h1 className="text-2xl font-bold">{storeName}</h1>
           </div>
         </div>
@@ -73,13 +73,13 @@ export default async function LoginPage() {
       <div className="flex items-center justify-center p-6 sm:p-10 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex items-center gap-3 mb-6">
-            <div className="rounded-lg bg-primary p-2">
-              {logoUrl ? (
-                <img src={logoUrl} alt={storeName} className="h-6 w-6 object-contain" />
-              ) : (
+            {logoUrl ? (
+              <img src={logoUrl} alt={storeName} className="h-8 w-8 object-cover rounded-lg" />
+            ) : (
+              <div className="rounded-lg bg-primary p-2">
                 <Apple className="h-6 w-6 text-primary-foreground" />
-              )}
-            </div>
+              </div>
+            )}
             <h1 className="text-xl font-bold">{storeName}</h1>
           </div>
 

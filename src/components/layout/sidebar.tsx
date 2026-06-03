@@ -239,13 +239,13 @@ function SidebarLogo({ name, logo }: { name?: string; logo?: string | null }) {
 
   return (
     <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4 shrink-0">
-      <div className="rounded-lg bg-primary p-1.5">
-        {logo ? (
-          <img src={logo} alt={name} className="h-6 w-6 object-cover rounded" />
-        ) : (
+      {logo ? (
+        <img src={logo} alt={name} className="h-9 w-9 object-cover rounded-lg" />
+      ) : (
+        <div className="rounded-lg bg-primary p-1.5">
           <Apple className="h-5 w-5 text-primary-foreground" />
-        )}
-      </div>
+        </div>
+      )}
       <div className="flex flex-col">
         <span className="text-sm font-bold leading-tight">{line1}</span>
         <span className="text-xs text-sidebar-foreground/70 leading-tight">{line2}</span>
@@ -295,13 +295,13 @@ export function Sidebar({ role, storeName, storeLogo }: { role: string; storeNam
       >
         <div className="flex items-center justify-between border-b border-sidebar-border px-4 h-16 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary p-1.5">
-              {storeLogo ? (
-                <img src={storeLogo} alt={storeName} className="h-6 w-6 object-cover rounded" />
-              ) : (
+            {storeLogo ? (
+              <img src={storeLogo} alt={storeName} className="h-9 w-9 object-cover rounded-lg" />
+            ) : (
+              <div className="rounded-lg bg-primary p-1.5">
                 <Apple className="h-5 w-5 text-primary-foreground" />
-              )}
-            </div>
+              </div>
+            )}
             <div className="flex flex-col">
               <span className="text-sm font-bold leading-tight">{storeName || "Frutería"}</span>
               <span className="text-xs text-sidebar-foreground/70 leading-tight">El Principiante</span>
