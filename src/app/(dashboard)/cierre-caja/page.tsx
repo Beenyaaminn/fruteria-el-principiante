@@ -151,15 +151,20 @@ export default async function CierreCajaPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-dashed">
+        <Card className="border-destructive/30">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-muted-foreground" />
-              Caja cerrada
-            </CardTitle>
-            <CardDescription>
-              No tienes una sesión de caja abierta. Abre una para empezar a vender.
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  Caja cerrada
+                </CardTitle>
+                <CardDescription>
+                  No tienes una sesión de caja abierta. Abre una para empezar a vender.
+                </CardDescription>
+              </div>
+              <Badge className="bg-red-500 text-white">CERRADA</Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <Button asChild>
@@ -232,15 +237,15 @@ export default async function CierreCajaPage() {
                         <Badge variant="outline">{s._count.sales}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            s.status === "OPEN"
-                              ? "bg-green-500/10 text-green-700"
-                              : "bg-muted"
-                          }
-                        >
-                          {s.status === "OPEN" ? "Abierta" : "Cerrada"}
-                        </Badge>
+                      <Badge
+                        className={
+                          s.status === "OPEN"
+                            ? "bg-green-500/10 text-green-700"
+                            : "bg-red-500 text-white"
+                        }
+                      >
+                        {s.status === "OPEN" ? "Abierta" : "Cerrada"}
+                      </Badge>
                       </TableCell>
                       <TableCell>
                         {s.status === "CLOSED" && (

@@ -33,10 +33,12 @@ export async function createSale(data: CreateSaleInput) {
   const validated = CreateSaleSchema.parse(data);
 
   // Calcular totales en el servidor (autoridad)
-  const subtotal = validated.items.reduce(
+  // En Chile el unitPrice incluye IVA. El subtotal neto es sin IVA.
+  const grossSubtotal = validated.items.reduce(
     (sum, i) => sum + i.unitPrice * i.quantity - i.discount,
     0
   );
+  const subtotal = grossSubtotal - validated.taxTotal;
   const total = subtotal - validated.discountTotal + validated.taxTotal;
 
   // Obtener el siguiente número de ticket
@@ -50,6 +52,15 @@ export async function createSale(data: CreateSaleInput) {
   const defaultWarehouse = await prisma.warehouse.findFirst();
   if (!defaultWarehouse) {
     throw new Error("No hay bodegas configuradas");
+  }
+
+  // Verificar que la caja esté abierta
+  const cashSession = await prisma.cashSession.findFirst({
+    where: { userId: session.userId, status: "OPEN" },
+    select: { id: true },
+  });
+  if (!cashSession) {
+    throw new Error("Debes abrir la caja antes de realizar ventas. Ve a Cierre de Caja → Abrir caja.");
   }
 
   // Verificar stock disponible
@@ -84,6 +95,7 @@ export async function createSale(data: CreateSaleInput) {
         customerName: validated.customerName || null,
         notes: validated.notes || null,
         userId: session.userId,
+        cashSessionId: cashSession.id,
         items: {
           create: validated.items.map((i) => ({
             productId: i.productId,

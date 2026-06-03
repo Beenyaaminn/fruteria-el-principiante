@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,9 +44,11 @@ const unitLabels: Record<string, string> = {
 export function EntryForm({
   warehouses,
   products,
+  preselectedProduct,
 }: {
   warehouses: Warehouse[];
   products: Product[];
+  preselectedProduct?: string;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +57,18 @@ export function EntryForm({
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<EntryItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
+
+  // Preseleccionar producto si viene por query param
+  useEffect(() => {
+    if (preselectedProduct) {
+      const product = products.find(
+        (p) =>
+          p.name.toLowerCase() === preselectedProduct.toLowerCase() ||
+          p.sku?.toLowerCase() === preselectedProduct.toLowerCase()
+      );
+      if (product) addProduct(product);
+    }
+  }, [preselectedProduct, products]);
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productSearch.toLowerCase()) ||

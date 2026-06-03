@@ -4,9 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calculator, CheckCircle2 } from "lucide-react";
-import { getCashSessionSummary } from "@/lib/actions/cash-sessions";
-import { formatCLP, formatDateTime } from "@/lib/format";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ArrowLeft, Calculator, ShoppingBag } from "lucide-react";
+import { getCashSessionSummary, getCashSessionProducts } from "@/lib/actions/cash-sessions";
+import { formatCLP, formatDateTime, formatNumber } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +24,18 @@ export default async function CashSessionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const summary = await getCashSessionSummary(id);
+  const [summary, products] = await Promise.all([
+    getCashSessionSummary(id),
+    getCashSessionProducts(id),
+  ]);
   if (!summary) notFound();
+
+  const totalProfit = products.reduce((sum, p) => sum + p.profit, 0);
+
+  const unitLabels: Record<string, string> = {
+    UNIDAD: "un", KILO: "kg", GRAMO: "g", LITRO: "L",
+    PACK: "pack", CAJA: "cja", MANOJO: "manojo", MALLA: "malla",
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -141,6 +159,61 @@ export default async function CashSessionDetailPage({
                   <p className="font-semibold">{formatCLP(s.total)}</p>
                 </div>
               ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Productos vendidos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4" />
+            Productos vendidos ({products.length})
+          </CardTitle>
+          <CardDescription>
+            Ganancia del turno: <span className="font-semibold text-green-600">{formatCLP(totalProfit)}</span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {products.length === 0 ? (
+            <p className="text-center py-8 text-sm text-muted-foreground">Sin productos vendidos</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead className="text-right">Cantidad</TableHead>
+                    <TableHead className="text-right">Venta</TableHead>
+                    <TableHead className="text-right">Costo</TableHead>
+                    <TableHead className="text-right">Ganancia</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((p) => (
+                    <TableRow key={p.productId}>
+                      <TableCell>
+                        <p className="font-medium text-sm">{p.name}</p>
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {formatNumber(p.quantity, 2)} {unitLabels[p.unit] || p.unit}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCLP(p.revenue)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        {formatCLP(p.cost)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={p.profit >= 0 ? "text-green-600 font-semibold" : "text-destructive font-semibold"}>
+                          +{formatCLP(p.profit)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

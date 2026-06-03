@@ -177,3 +177,53 @@ export async function getCashSessionHistory({ page = 1, pageSize = 20 }: { page?
 
   return { sessions, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
 }
+
+export async function getCashSessionProducts(sessionId: string) {
+  await verifySession();
+
+  const saleIds = await prisma.sale.findMany({
+    where: { cashSessionId: sessionId, status: "COMPLETED" },
+    select: { id: true },
+  });
+
+  if (saleIds.length === 0) return [];
+
+  const items = await prisma.saleItem.findMany({
+    where: { saleId: { in: saleIds.map((s) => s.id) } },
+    include: {
+      product: { select: { id: true, name: true, unit: true, priceCost: true } },
+    },
+  });
+
+  // Agrupar por producto
+  const byProduct: Record<string, {
+    productId: string;
+    name: string;
+    unit: string;
+    quantity: number;
+    revenue: number;
+    cost: number;
+    profit: number;
+  }> = {};
+
+  for (const item of items) {
+    const key = item.productId;
+    if (!byProduct[key]) {
+      byProduct[key] = {
+        productId: key,
+        name: item.product.name,
+        unit: item.product.unit,
+        quantity: 0,
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+      };
+    }
+    byProduct[key].quantity += item.quantity;
+    byProduct[key].revenue += item.subtotal;
+    byProduct[key].cost += item.quantity * item.product.priceCost;
+    byProduct[key].profit = byProduct[key].revenue - byProduct[key].cost;
+  }
+
+  return Object.values(byProduct).sort((a, b) => b.revenue - a.revenue);
+}

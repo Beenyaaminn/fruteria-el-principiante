@@ -60,3 +60,5 @@ next-env.d.ts
 # Scripts auxiliares de prueba (solo dev local)
 /scripts/test-*.cjs
 /scripts/gen-session.cjs
+
+.vercel

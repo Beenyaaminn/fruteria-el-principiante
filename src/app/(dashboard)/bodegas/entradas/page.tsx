@@ -7,11 +7,16 @@ import { EntryForm } from "./entry-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function EntradasPage() {
+export default async function EntradasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ producto?: string }>;
+}) {
   const [warehouses, products] = await Promise.all([
     getWarehouses(),
     getProducts(),
   ]);
+  const params = await searchParams;
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -27,10 +32,13 @@ export default async function EntradasPage() {
           Recepción de mercadería
         </h1>
         <p className="text-muted-foreground">
-          Registra entradas de productos al inventario (compras, devoluciones)
+          {params.producto
+            ? `Agregando stock para: ${params.producto}`
+            : "Registra entradas de productos al inventario (compras, devoluciones)"}
         </p>
       </div>
       <EntryForm
+        preselectedProduct={params.producto || undefined}
         warehouses={warehouses}
         products={products.map((p) => ({
           id: p.id,

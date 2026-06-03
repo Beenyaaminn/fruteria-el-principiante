@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Package, Edit, Tags, AlertTriangle } from "lucide-react";
+import { Plus, Search, Package, Tags, AlertTriangle, PackagePlus } from "lucide-react";
 import { getProducts } from "@/lib/actions/products";
 import { getCategories } from "@/lib/actions/categories";
 import { formatCLP, formatNumber } from "@/lib/format";
@@ -202,20 +202,28 @@ export default async function InventarioPage({
                           </span>
                         </TableCell>
                         <TableCell>
-                          {isOut ? (
-                            <Badge variant="destructive">Agotado</Badge>
-                          ) : isLow ? (
-                            <Badge className="bg-orange-500/10 text-orange-700">
-                              Bajo
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-green-500/10 text-green-700">
-                              OK
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {isOut ? (
+                              <Badge variant="destructive">Agotado</Badge>
+                            ) : isLow ? (
+                              <Badge className="bg-orange-500/10 text-orange-700">Bajo</Badge>
+                            ) : (
+                              <Badge className="bg-green-500/10 text-green-700">OK</Badge>
+                            )}
+                            {(isOut || isLow) && (
+                              <Link href={`/bodegas/entradas?producto=${encodeURIComponent(p.name)}`}>
+                                <Badge className="bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer">
+                                  <PackagePlus className="mr-1 h-3 w-3" />
+                                  Reponer
+                                </Badge>
+                              </Link>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <ProductActions productId={p.id} />
+                          <div className="flex items-center gap-1">
+                            <ProductActions productId={p.id} productName={p.name} />
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

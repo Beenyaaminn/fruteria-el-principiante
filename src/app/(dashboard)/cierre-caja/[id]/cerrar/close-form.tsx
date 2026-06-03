@@ -70,7 +70,7 @@ export function CloseSessionForm({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="amount">Efectivo contado en caja</Label>
+            <Label htmlFor="amount">Total de dinero en caja</Label>
             <div className="relative">
               <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
