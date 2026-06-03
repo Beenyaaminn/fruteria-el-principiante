@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { KeepAlivePing } from "@/components/keep-alive-ping";
 import { getCurrentUser } from "@/lib/dal";
 
 export default async function DashboardLayout({
@@ -11,6 +12,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <KeepAlivePing />
       <Sidebar role={user?.role || "CAJERO"} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header user={user} />
