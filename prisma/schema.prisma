@@ -27,6 +27,7 @@ model User {
   sales          Sale[]
   stockMovements StockMovement[]
   cashSessions   CashSession[]
+  cashMovements  CashMovement[]
   customerPayments CustomerPayment[]
   purchases      Purchase[]
   auditLogs      AuditLog[]
@@ -281,9 +282,22 @@ model CashSession {
   notes           String?
 
   sales           Sale[]
+  movements       CashMovement[]
 
   openedAt        DateTime @default(now())
   closedAt        DateTime?
+}
+
+model CashMovement {
+  id            String      @id @default(cuid())
+  cashSessionId String
+  cashSession   CashSession @relation(fields: [cashSessionId], references: [id])
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  type          String      // IN | OUT
+  amount        Float
+  reason        String?
+  createdAt     DateTime    @default(now())
 }
 
 // =========================

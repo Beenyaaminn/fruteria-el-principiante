@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function POSPage() {
   let products, categories, customers;
-  let cashSession: { openAmount: number; openedAt: string } | null = null;
+  let cashSession: { id: string; openAmount: number; openedAt: string } | null = null;
 
   try {
     [products, categories, customers] = await Promise.all([
@@ -24,6 +24,7 @@ export default async function POSPage() {
     const session = await getCurrentCashSession();
     if (session) {
       cashSession = {
+        id: session.id,
         openAmount: session.openAmount,
         openedAt: session.openedAt instanceof Date
           ? session.openedAt.toISOString()
@@ -46,6 +47,8 @@ export default async function POSPage() {
     categoryName: p.categoryName,
     unit: p.unit,
     price: p.priceSale,
+    priceWholesale: p.priceWholesale,
+    wholesaleMinQty: p.wholesaleMinQty,
     taxRate: p.taxRate,
     totalStock: p.totalStock,
   }));

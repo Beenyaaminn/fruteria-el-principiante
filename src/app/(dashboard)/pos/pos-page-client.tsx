@@ -14,6 +14,8 @@ type POSProduct = {
   categoryName: string;
   unit: string;
   price: number;
+  priceWholesale?: number | null;
+  wholesaleMinQty?: number | null;
   taxRate: number;
   totalStock: number;
 };
@@ -51,7 +53,7 @@ export function POSPageClient({
   allProducts: Product[];
   categories: Category[];
   customers: Customer[];
-  cashSession: { openAmount: number; openedAt: string } | null;
+  cashSession: { id: string; openAmount: number; openedAt: string } | null;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>("ventas");
 

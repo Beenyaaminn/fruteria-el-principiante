@@ -34,10 +34,17 @@ import {
   User,
   Tag,
   Percent,
+  Barcode,
+  FileText,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Scan,
+  DollarSign,
 } from "lucide-react";
 import { formatCLP } from "@/lib/format";
 import { toast } from "sonner";
 import { createSale } from "@/lib/actions/sales";
+import { createCashMovement, getCashMovements } from "@/lib/actions/cash-movements";
 import { PaymentDialog } from "./payment-dialog";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +57,8 @@ type Product = {
   categoryName: string;
   unit: string;
   price: number;
+  priceWholesale?: number | null;
+  wholesaleMinQty?: number | null;
   taxRate: number;
   totalStock: number;
 };
@@ -71,7 +80,7 @@ export function POSClient({
   products: Product[];
   categories: Category[];
   customers: Customer[];
-  cashSession: { openAmount: number; openedAt: string } | null;
+  cashSession: { id: string; openAmount: number; openedAt: string } | null;
 }) {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -81,6 +90,16 @@ export function POSClient({
   const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
   const [mobileView, setMobileView] = useState<"products" | "cart">("products");
+  const [artComunOpen, setArtComunOpen] = useState(false);
+  const [artComunName, setArtComunName] = useState("");
+  const [artComunPrice, setArtComunPrice] = useState("");
+  const [cashMoveOpen, setCashMoveOpen] = useState(false);
+  const [cashMoveType, setCashMoveType] = useState<"IN" | "OUT">("IN");
+  const [cashMoveAmount, setCashMoveAmount] = useState("");
+  const [cashMoveReason, setCashMoveReason] = useState("");
+  const [verificadorOpen, setVerificadorOpen] = useState(false);
+  const [verificadorCode, setVerificadorCode] = useState("");
+  const [verificadorResult, setVerificadorResult] = useState<Product | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -237,6 +256,93 @@ export function POSClient({
     }
   }
 
+  async function handleCashMovement() {
+    const amount = parseInt(cashMoveAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Ingresa un monto válido");
+      return;
+    }
+    if (!cashSession?.id) {
+      toast.error("No hay sesión de caja abierta");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await createCashMovement({
+        cashSessionId: cashSession.id,
+        type: cashMoveType,
+        amount,
+        reason: cashMoveReason || null,
+      });
+      toast.success(`${cashMoveType === "IN" ? "Entrada" : "Salida"} registrada: ${formatCLP(amount)}`);
+      setCashMoveOpen(false);
+      setCashMoveAmount("");
+      setCashMoveReason("");
+    } catch (err: any) {
+      toast.error(err.message || "Error al registrar movimiento");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleArtComun() {
+    const price = parseInt(artComunPrice);
+    if (!artComunName.trim() || !price || price <= 0) {
+      toast.error("Ingresa nombre y precio válidos");
+      return;
+    }
+    addItem({
+      productId: `custom-${Date.now()}`,
+      name: artComunName.trim(),
+      price,
+      unit: "UNIDAD",
+      stock: 999,
+      taxRate: 0,
+      categoryName: "Manual",
+    });
+    setArtComunOpen(false);
+    setArtComunName("");
+    setArtComunPrice("");
+    toast.success(`Agregado: ${artComunName.trim()} ${formatCLP(price)}`);
+  }
+
+  async function handleVerificador() {
+    if (!verificadorCode.trim()) return;
+    const code = verificadorCode.trim().toLowerCase();
+    const found = products.find(
+      (p) =>
+        p.barcode?.toLowerCase() === code ||
+        p.sku?.toLowerCase() === code ||
+        p.id.toLowerCase() === code
+    );
+    if (found) {
+      setVerificadorResult(found);
+    } else {
+      setVerificadorResult(null);
+      toast.info("Producto no encontrado");
+    }
+  }
+
+  function handleMayoreo() {
+    if (!customer) {
+      toast.error("Asigna un cliente primero para precio mayorista");
+      return;
+    }
+    let applied = false;
+    items.forEach((item) => {
+      const product = products.find((p) => p.id === item.productId);
+      if (product && product.priceWholesale && product.wholesaleMinQty && item.quantity >= product.wholesaleMinQty) {
+        setItemDiscount(item.productId, (item.price - product.priceWholesale) * item.quantity);
+        applied = true;
+      }
+    });
+    if (applied) {
+      toast.success("Precio mayorista aplicado");
+    } else {
+      toast.info("Ningún ítem califica para precio mayorista");
+    }
+  }
+
   return (
     <div className="h-full flex flex-col lg:flex-row bg-muted/20 relative">
       {/* Bloqueo si no hay caja abierta */}
@@ -365,6 +471,35 @@ export function POSClient({
             )}
           </div>
         </ScrollArea>
+
+        {/* Ventas action bar */}
+        <div className="border-t border-border bg-card p-1.5 flex items-center gap-1 overflow-x-auto shrink-0">
+          <Button size="sm" variant="ghost" onClick={() => searchRef.current?.focus()} className="shrink-0 text-xs">
+            <Barcode className="h-3.5 w-3.5 mr-1" /> Código
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setArtComunOpen(true)} className="shrink-0 text-xs">
+            <FileText className="h-3.5 w-3.5 mr-1" /> Art Común
+          </Button>
+          <Button size="sm" variant="ghost" onClick={handleMayoreo} className="shrink-0 text-xs">
+            <DollarSign className="h-3.5 w-3.5 mr-1" /> Mayoreo
+          </Button>
+          <span className="w-px h-4 bg-border shrink-0" />
+          <Button size="sm" variant="ghost" onClick={() => { setCashMoveType("IN"); setCashMoveOpen(true); }} className="shrink-0 text-xs text-green-600">
+            <ArrowDownToLine className="h-3.5 w-3.5 mr-1" /> Entradas
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setCashMoveType("OUT"); setCashMoveOpen(true); }} className="shrink-0 text-xs text-red-600">
+            <ArrowUpFromLine className="h-3.5 w-3.5 mr-1" /> Salidas
+          </Button>
+          <span className="w-px h-4 bg-border shrink-0" />
+          <Button size="sm" variant="ghost" onClick={() => { setVerificadorCode(""); setVerificadorResult(null); setVerificadorOpen(true); }} className="shrink-0 text-xs">
+            <Scan className="h-3.5 w-3.5 mr-1" /> Verificador
+          </Button>
+          {items.length > 0 && (
+            <Button size="sm" variant="ghost" onClick={() => removeItem(items[items.length - 1].productId)} className="shrink-0 text-xs text-destructive">
+              <Trash2 className="h-3.5 w-3.5 mr-1" /> Borrar Art
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* DERECHA: CARRITO */}
@@ -686,6 +821,100 @@ export function POSClient({
           )}
         </button>
       </div>
+
+      {/* Diálogo Art Común */}
+      <Dialog open={artComunOpen} onOpenChange={setArtComunOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Artículo común</DialogTitle>
+            <DialogDescription>Agrega un producto con nombre y precio manual</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Nombre</Label>
+              <Input value={artComunName} onChange={(e) => setArtComunName(e.target.value)} placeholder="Ej: Varios $500" autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Precio</Label>
+              <Input type="number" min="1" value={artComunPrice} onChange={(e) => setArtComunPrice(e.target.value)} placeholder="500" onKeyDown={(e) => e.key === "Enter" && handleArtComun()} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArtComunOpen(false)}>Cancelar</Button>
+            <Button onClick={handleArtComun}>Agregar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Entradas/Salidas */}
+      <Dialog open={cashMoveOpen} onOpenChange={setCashMoveOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{cashMoveType === "IN" ? "Entrada de dinero" : "Salida de dinero"}</DialogTitle>
+            <DialogDescription>
+              {cashMoveType === "IN"
+                ? "Registra dinero que ingresa a la caja (no es venta)"
+                : "Registra dinero que sale de la caja (gasto, retiro)"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Monto</Label>
+              <Input type="number" min="1" value={cashMoveAmount} onChange={(e) => setCashMoveAmount(e.target.value)} placeholder="0" autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Motivo (opcional)</Label>
+              <Input value={cashMoveReason} onChange={(e) => setCashMoveReason(e.target.value)} placeholder={cashMoveType === "IN" ? "Ej: vuelto inicial" : "Ej: compra de insumos"} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCashMoveOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+            <Button onClick={handleCashMovement} disabled={isSubmitting} className={cashMoveType === "IN" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {cashMoveType === "IN" ? "Registrar entrada" : "Registrar salida"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo Verificador */}
+      <Dialog open={verificadorOpen} onOpenChange={setVerificadorOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Verificador de precio</DialogTitle>
+            <DialogDescription>Escanea o ingresa código de barra, SKU o ID del producto</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Código</Label>
+              <Input
+                value={verificadorCode}
+                onChange={(e) => {
+                  setVerificadorCode(e.target.value);
+                  setVerificadorResult(null);
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleVerificador(); }}
+                placeholder="Código de barra o SKU"
+                autoFocus
+              />
+            </div>
+            {verificadorResult && (
+              <div className="rounded-lg border border-border p-3 bg-muted/30">
+                <p className="font-semibold">{verificadorResult.name}</p>
+                <p className="text-xs text-muted-foreground">{verificadorResult.categoryName} · {verificadorResult.sku || "Sin SKU"}</p>
+                <p className="text-2xl font-bold text-primary mt-1">{formatCLP(verificadorResult.price)}</p>
+                <p className="text-xs text-muted-foreground">Stock: {verificadorResult.totalStock}</p>
+              </div>
+            )}
+            {verificadorCode && !verificadorResult && (
+              <Button variant="outline" onClick={handleVerificador} className="w-full">Buscar</Button>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVerificadorOpen(false)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

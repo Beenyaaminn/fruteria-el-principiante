@@ -54,6 +54,10 @@ export async function getCashSessionSummary(sessionId: string) {
           createdAt: true,
         },
       },
+      movements: {
+        select: { id: true, type: true, amount: true, reason: true, createdAt: true, user: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
@@ -80,7 +84,9 @@ export async function getCashSessionSummary(sessionId: string) {
   const totalCashSales = byPayment.EFECTIVO.total;
   const totalCashReceived = cashSession.sales.reduce((sum, s) => sum + (s.cashReceived || 0), 0);
   const totalChange = cashSession.sales.reduce((sum, s) => sum + (s.cashChange || 0), 0);
-  const expectedCash = cashSession.openAmount + totalCashReceived - totalChange;
+  const totalIns = cashSession.movements.filter((m) => m.type === "IN").reduce((s, m) => s + m.amount, 0);
+  const totalOuts = cashSession.movements.filter((m) => m.type === "OUT").reduce((s, m) => s + m.amount, 0);
+  const expectedCash = cashSession.openAmount + totalCashReceived - totalChange + totalIns - totalOuts;
 
   return {
     ...cashSession,
@@ -88,6 +94,8 @@ export async function getCashSessionSummary(sessionId: string) {
     totalSales,
     totalCashSales,
     expectedCash,
+    totalIns,
+    totalOuts,
   };
 }
 
@@ -127,6 +135,7 @@ export async function closeCashSession(data: z.infer<typeof CloseSessionSchema>)
         where: { status: "COMPLETED" },
         select: { cashReceived: true, cashChange: true, paymentMethod: true },
       },
+      movements: { select: { type: true, amount: true } },
     },
   });
 
@@ -139,7 +148,9 @@ export async function closeCashSession(data: z.infer<typeof CloseSessionSchema>)
   // Calcular efectivo esperado
   const totalCashReceived = cashSession.sales.reduce((sum, s) => sum + (s.cashReceived || 0), 0);
   const totalChange = cashSession.sales.reduce((sum, s) => sum + (s.cashChange || 0), 0);
-  const expectedCash = cashSession.openAmount + totalCashReceived - totalChange;
+  const totalIns = cashSession.movements.filter((m) => m.type === "IN").reduce((s, m) => s + m.amount, 0);
+  const totalOuts = cashSession.movements.filter((m) => m.type === "OUT").reduce((s, m) => s + m.amount, 0);
+  const expectedCash = cashSession.openAmount + totalCashReceived - totalChange + totalIns - totalOuts;
   const difference = validated.closeAmount - expectedCash;
 
   const closed = await prisma.cashSession.update({

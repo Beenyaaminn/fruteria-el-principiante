@@ -139,6 +139,40 @@ export default async function CashSessionDetailPage({
         </Card>
       </div>
 
+      {/* Movimientos de caja (entradas/salidas) */}
+      {summary.movements && summary.movements.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Movimientos de caja</CardTitle>
+            <CardDescription>
+              {summary.totalIns ? `+${formatCLP(summary.totalIns)} entradas` : ""}
+              {summary.totalIns && summary.totalOuts ? " · " : ""}
+              {summary.totalOuts ? `-${formatCLP(summary.totalOuts)} salidas` : ""}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {summary.movements.map((m) => (
+                <div key={m.id} className="flex items-center justify-between p-3">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {m.type === "IN" ? "Entrada" : "Salida"}
+                      {m.reason && <span className="text-muted-foreground font-normal"> · {m.reason}</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDateTime(m.createdAt)} · {m.user?.name}
+                    </p>
+                  </div>
+                  <span className={m.type === "IN" ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                    {m.type === "IN" ? "+" : "-"}{formatCLP(m.amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Ventas del turno ({summary.sales.length})</CardTitle>
