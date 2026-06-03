@@ -8,24 +8,26 @@ export default async function LoginPage() {
   const config = await prisma.storeConfig.findUnique({ where: { id: "default" } });
   const storeName = config?.name || "Frutería El Principiante";
   const logoUrl = config?.logo;
-  const bgStyle = config?.loginBackground || undefined;
+  const bgStyleValue = config?.loginBackground || undefined;
+  const isBgUrl = bgStyleValue?.startsWith("http");
 
-  const bgClasses = !bgStyle
+  const bgClasses = !bgStyleValue
     ? "bg-gradient-to-br from-primary via-primary to-emerald-700"
     : "";
-  const bgInline = bgStyle ? { background: bgStyle } : {};
+  const bgInline = bgStyleValue
+    ? isBgUrl
+      ? { backgroundImage: `url(${bgStyleValue})`, backgroundSize: "cover", backgroundPosition: "center" }
+      : { background: bgStyleValue }
+    : {};
 
   return (
     <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
       {/* Lado izquierdo - Branding */}
       <div
         className={`hidden lg:flex flex-col justify-between p-10 text-primary-foreground relative overflow-hidden ${bgClasses}`}
-        style={{
-          ...bgInline,
-          ...(bgStyle ? {} : {}),
-        }}
+        style={bgInline}
       >
-        {!bgStyle && (
+        {!bgStyleValue && (
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-10"><Apple className="h-32 w-32" /></div>
             <div className="absolute top-40 right-20"><Cherry className="h-24 w-24" /></div>
@@ -34,13 +36,13 @@ export default async function LoginPage() {
           </div>
         )}
 
-        {bgStyle && <div className="absolute inset-0 bg-black/30" />}
+        {bgStyleValue && <div className="absolute inset-0 bg-black/30" />}
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-white/20 p-2 backdrop-blur-sm">
               {logoUrl ? (
-                <img src={logoUrl} alt={storeName} className="h-8 w-8 object-contain" />
+                <img src={logoUrl} alt={storeName} className="h-10 w-10 object-contain" />
               ) : (
                 <Apple className="h-8 w-8" />
               )}
