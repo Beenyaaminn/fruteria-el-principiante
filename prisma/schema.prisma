@@ -306,6 +306,7 @@ model CashMovement {
 model StoreConfig {
   id              String   @id @default("default")
   name            String   @default("Frutería El Principiante")
+  subtitle        String?
   logo            String?
   address         String?
   phone           String?

@@ -43,7 +43,7 @@ export function ConfiguracionTab() {
       const c = await getStoreConfig();
       setConfig(c);
       setForm({
-        name: c.name || "", logo: c.logo || "", address: c.address || "",
+        name: c.name || "", subtitle: c.subtitle || "", logo: c.logo || "", address: c.address || "",
         phone: c.phone || "", email: c.email || "", website: c.website || "",
         taxId: c.taxId || "", currency: c.currency || "CLP",
         currencySymbol: c.currencySymbol || "$",
@@ -61,7 +61,7 @@ export function ConfiguracionTab() {
     setSaving(true);
     try {
       await updateStoreConfig({
-        name: form.name, logo: form.logo || null, address: form.address || null,
+        name: form.name, subtitle: form.subtitle || null, logo: form.logo || null, address: form.address || null,
         phone: form.phone || null, email: form.email || null, website: form.website || null,
         taxId: form.taxId || null, currency: form.currency, currencySymbol: form.currencySymbol,
         ticketHeader: form.ticketHeader || null, ticketFooter: form.ticketFooter || null,
@@ -98,7 +98,8 @@ export function ConfiguracionTab() {
             <Card className="shadow-none">
               <CardHeader className="pb-2"><CardTitle className="text-sm">Datos de la tienda</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-1.5"><Label>Nombre de la tienda *</Label><Input value={form.name} onChange={(e) => update("name", e.target.value)} /></div>
+                <div className="space-y-1.5"><Label>Primer nombre *</Label><Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Frutería" /></div>
+                <div className="space-y-1.5"><Label>Segundo nombre</Label><Input value={form.subtitle || ""} onChange={(e) => update("subtitle", e.target.value)} placeholder="El Principiante" /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5"><Label>Teléfono</Label><Input value={form.phone} onChange={(e) => update("phone", e.target.value)} /></div>
                   <div className="space-y-1.5"><Label>Email</Label><Input value={form.email} onChange={(e) => update("email", e.target.value)} /></div>

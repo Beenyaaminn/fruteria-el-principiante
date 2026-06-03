@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   const config = await prisma.storeConfig.findUnique({ where: { id: "default" } });
-  const storeName = config?.name || "Frutería El Principiante";
+  const storeName = config?.name || "Frutería";
+  const storeSubtitle = config?.subtitle || "El Principiante";
   const logoUrl = config?.logo;
   const bgStyleValue = config?.loginBackground || undefined;
   const isBgUrl = bgStyleValue?.startsWith("http");
@@ -47,7 +48,10 @@ export default async function LoginPage() {
                 <Apple className="h-8 w-8" />
               </div>
             )}
-            <h1 className="text-2xl font-bold">{storeName}</h1>
+            <div>
+              <h1 className="text-2xl font-bold leading-tight">{storeName}</h1>
+              {storeSubtitle && <p className="text-sm text-primary-foreground/70">{storeSubtitle}</p>}
+            </div>
           </div>
         </div>
 
@@ -80,7 +84,10 @@ export default async function LoginPage() {
                 <Apple className="h-6 w-6 text-primary-foreground" />
               </div>
             )}
-            <h1 className="text-xl font-bold">{storeName}</h1>
+            <div>
+              <h1 className="text-xl font-bold leading-tight">{storeName}</h1>
+              {storeSubtitle && <p className="text-xs text-muted-foreground">{storeSubtitle}</p>}
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -7,6 +7,7 @@ import { requireRole } from "@/lib/dal";
 
 const ConfigSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
+  subtitle: z.string().optional().nullable(),
   logo: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -44,6 +45,7 @@ export async function updateStoreConfig(data: ConfigInput) {
     update: {
       ...validated,
       logo: validated.logo || null,
+      subtitle: validated.subtitle || null,
       address: validated.address || null,
       phone: validated.phone || null,
       email: validated.email || null,
@@ -57,6 +59,7 @@ export async function updateStoreConfig(data: ConfigInput) {
       id: "default",
       ...validated,
       logo: validated.logo || null,
+      subtitle: validated.subtitle || null,
       address: validated.address || null,
       phone: validated.phone || null,
       email: validated.email || null,

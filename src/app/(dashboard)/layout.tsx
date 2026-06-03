@@ -13,11 +13,12 @@ export default async function DashboardLayout({
   const config = await prisma.storeConfig.findUnique({ where: { id: "default" } });
   const storeName = config?.name || "Frutería El Principiante";
   const storeLogo = config?.logo || null;
+  const storeSubtitle = config?.subtitle || null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <KeepAlivePing />
-      <Sidebar role={user?.role || "CAJERO"} storeName={storeName} storeLogo={storeLogo} />
+      <Sidebar role={user?.role || "CAJERO"} storeName={storeName} storeLogo={storeLogo} storeSubtitle={storeSubtitle} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header user={user} />
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8">

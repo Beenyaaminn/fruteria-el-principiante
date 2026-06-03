@@ -232,10 +232,9 @@ function SidebarFooter() {
   );
 }
 
-function SidebarLogo({ name, logo }: { name?: string; logo?: string | null }) {
-  const names = (name || "Frutería El Principiante").split(" ");
-  const line1 = names.slice(0, 1).join(" ") || "Frutería";
-  const line2 = names.slice(1).join(" ") || "El Principiante";
+function SidebarLogo({ name, logo, subtitle }: { name?: string; logo?: string | null; subtitle?: string | null }) {
+  const line1 = name || "Frutería";
+  const line2 = subtitle || "El Principiante";
 
   return (
     <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4 shrink-0">
@@ -254,14 +253,14 @@ function SidebarLogo({ name, logo }: { name?: string; logo?: string | null }) {
   );
 }
 
-export function Sidebar({ role, storeName, storeLogo }: { role: string; storeName?: string; storeLogo?: string | null }) {
+export function Sidebar({ role, storeName, storeLogo, storeSubtitle }: { role: string; storeName?: string; storeLogo?: string | null; storeSubtitle?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <SidebarLogo name={storeName} logo={storeLogo} />
+        <SidebarLogo name={storeName} logo={storeLogo} subtitle={storeSubtitle} />
         <SidebarNav role={role} />
         <SidebarFooter />
       </aside>
@@ -304,7 +303,7 @@ export function Sidebar({ role, storeName, storeLogo }: { role: string; storeNam
             )}
             <div className="flex flex-col">
               <span className="text-sm font-bold leading-tight">{storeName || "Frutería"}</span>
-              <span className="text-xs text-sidebar-foreground/70 leading-tight">El Principiante</span>
+              <span className="text-xs text-sidebar-foreground/70 leading-tight">{storeSubtitle || "El Principiante"}</span>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="h-8 w-8">
