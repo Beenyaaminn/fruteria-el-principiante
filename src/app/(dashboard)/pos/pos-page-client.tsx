@@ -4,6 +4,7 @@ import { useState } from "react";
 import { POSClient } from "./pos-client";
 import { ProductosTab } from "./productos-tab";
 import { CreditosTab } from "./creditos-tab";
+import { ClientesTab } from "./clientes-tab";
 import { POSTabs, TabId } from "./pos-tabs";
 
 type POSProduct = {
@@ -76,6 +77,9 @@ export function POSPageClient({
         }
         creditosContent={
           <CreditosTab />
+        }
+        clientesContent={
+          <ClientesTab />
         }
       />
     </div>
