@@ -9,4 +9,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping keep-alive endpoint
-        run: curl -sf https://fruteriaelprincipiantecl.vercel.app/api/keep-alive
+        run: curl -sf https://fruteria-el-principiante.netlify.app/api/keep-alive
